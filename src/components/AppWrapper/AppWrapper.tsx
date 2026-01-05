@@ -5,32 +5,35 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SplashScreen } from "./SplashScreen";
 import { Onboarding } from "./Onboarding";
+import Login from "@/app/login/page";
+import { Preferences } from "@capacitor/preferences";
 
-type AppState = "splash" | "onboarding" | "main";
+// type AppState = "splash" | "onboarding" | "main";
+type AppState = "splash" | "onboarding" | "auth" | "main";
 
 export function AppWrapper({ children }: { children: React.ReactNode }) {
   const [appState, setAppState] = useState<AppState>("splash");
 
-  useEffect(() => {
-    // Initial splash screen delay
-    const timer = setTimeout(() => {
-      //* for login and register case
-      // localStorage.setItem("is_authenticated", "true");
+ useEffect(() => {
+   const initializeApp = async () => {
+     await new Promise((resolve) => setTimeout(resolve, 2000));
+     try {
 
-      //*In a real app, we'd check if user is new or logged in
-      // const isAuthenticated =
-      //   localStorage.getItem("is_authenticated") === "true";
+       const { value } = await Preferences.get({ key: "is_authenticated" });
 
-      // if (isAuthenticated) {
-      //   setAppState("main");
-      // } else {
-      //   setAppState("onboarding");
-      // }
-      setAppState("onboarding");
-    }, 2000);
+       if (value === "true") {
+         setAppState("main");
+       } else {
+         setAppState("onboarding");
+       }
+     } catch (error) {
+       console.error("Initialization error:", error);
+       setAppState("onboarding");
+     }
+   };
 
-    return () => clearTimeout(timer);
-  }, []);
+   initializeApp();
+ }, []);
 
   return (
     <div className="relative min-h-screen">
@@ -48,20 +51,21 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <Onboarding onComplete={() => setAppState("main")} />
+            <Onboarding onComplete={() => setAppState("auth")} />
+            {/* <Onboarding onComplete={() => setAppState("main")} /> */}
           </motion.div>
         )}
 
-        {/* {appState === "auth" && (
+        {appState === "auth" && (
           <motion.div
             key="auth"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <AuthFlow onAuthSuccess={() => setAppState("main")} />
+            <Login onAuthSuccess={() => setAppState("main")} />
           </motion.div>
-        )} */}
+        )}
 
         {appState === "main" && (
           <motion.div
